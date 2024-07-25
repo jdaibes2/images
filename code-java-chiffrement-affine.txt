@@ -1,0 +1,114 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class ChiffrementAffine {
+
+    // Fonction pour trouver l'inverse multiplicatif de a mod m
+    public static int modInverse(int a, int m) {
+        a = a % m;
+        for (int x = 1; x < m; x++) {
+            if ((a * x) % m == 1) {
+                return x;
+            }
+        }
+        throw new IllegalArgumentException("Inverse multiplicatif n'existe pas pour a = " + a);
+    }
+
+    // Fonction pour vérifier si a est premier avec m (ici m = 26)
+    public static boolean premierAvec(int a, int m) {
+        return pgcd(a, m) == 1;
+    }
+
+    // Fonction pour calculer le pgcd (plus grand commun diviseur)
+    public static int pgcd(int a, int b) {
+        if (b == 0) {
+            return a;
+        }
+        return pgcd(b, a % b);
+    }
+
+    // Fonction de chiffrement affine
+    public static String affineEncrypt(String plaintext, int a, int b) {
+        StringBuilder ciphertext = new StringBuilder();
+
+        for (char c : plaintext.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                int x = c - 'A';
+                int y = (a * x + b) % 26;
+                ciphertext.append((char) (y + 'A'));
+            } else {
+                ciphertext.append(c); // Garder les caractères non-majuscules intacts
+            }
+        }
+        return ciphertext.toString();
+    }
+
+    // Fonction de déchiffrement affine
+    public static String affineDecrypt(String ciphertext, int a, int b) {
+        int a_inv = modInverse(a, 26);
+        StringBuilder plaintext = new StringBuilder();
+
+        for (char c : ciphertext.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                int y = c - 'A';
+                int x = (a_inv * (y - b + 26)) % 26; // Assurez-vous que (y - b) ne soit pas négatif
+                plaintext.append((char) (x + 'A'));
+            } else {
+                plaintext.append(c); // Garder les caractères non-majuscules intacts
+            }
+        }
+        return plaintext.toString();
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Entrer le texte : ");
+        String inputText = scanner.nextLine();
+
+      
+        // le chiffrement demande la clé, qui doit être connue!
+        // le déchiffrement sera fait par force brute pour trouver la clé!
+        // ensuite il faut observer tout le texte généré s'il est lisible ou non
+        // à l'oeil nu !!!
+        
+        
+        System.out.print("Saisir 'E' pour chiffrer ou 'D' pour déchiffrer : ");
+        char choix = scanner.nextLine().toUpperCase().charAt(0);
+        if (choix == 'E') {
+            System.out.print("Entrez la clé a : ");
+            int a = scanner.nextInt();
+            System.out.print("Entrez la clé b : ");
+            int b = scanner.nextInt();
+
+            if (premierAvec(a, 26)) {
+                String encryptedText = affineEncrypt(inputText, a, b);
+                System.out.println("Texte chiffré : " + encryptedText);
+            } else {
+                System.out.println("La clé a doit être premier avec 26.");
+            }
+            
+        } else if (choix == 'D') {
+            try (FileWriter writer = new FileWriter("decryption_resultats.txt")) {
+                for (int a = 1; a < 26; a++) {
+                    if (premierAvec(a, 26)) {
+                        for (int b = 0; b < 26; b++) {
+                            String decryptedText = affineDecrypt(inputText, a, b);
+                            String resultat = String.format("Clé (a=%d, b=%d): %s%n", a, b, decryptedText);
+                            System.out.print(resultat); // Affiche à l'écran
+                            writer.write(resultat); // Écrit dans le fichier
+                        }
+                    }
+                }
+                System.out.println("Déchiffrement terminé. Résultats enregistrés dans 'decryption_resultats.txt'.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("Choix invalide. Entrer 'E' pour chiffrer ou 'D' pour déchiffrer.");
+        }
+
+        scanner.close();
+    }
+}
